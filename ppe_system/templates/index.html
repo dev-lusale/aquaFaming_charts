@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SafeGuard — Industrial PPE Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+
+  <style>
+    /* ═══════════════════════════════════════════════════════════
+       RESET & TOKENS
+    ═══════════════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --obsidian:   #07080d;
+      --navy-deep:  #0b0d16;
+      --navy-mid:   #0f1220;
+      --navy-card:  rgba(15, 18, 32, 0.72);
+      --gold:       #c9a84c;
+      --gold-light: #e8c97a;
+      --gold-dim:   rgba(201, 168, 76, 0.18);
+      --gold-line:  rgba(201, 168, 76, 0.30);
+      --white-hi:   rgba(255, 255, 255, 0.92);
+      --white-mid:  rgba(255, 255, 255, 0.55);
+      --white-low:  rgba(255, 255, 255, 0.18);
+      --safe:       #3dd68c;
+      --safe-dim:   rgba(61, 214, 140, 0.14);
+      --danger:     #e05252;
+      --danger-dim: rgba(224, 82, 82, 0.14);
+      --radius-lg:  14px;
+      --radius-md:  9px;
+      --blur:       backdrop-filter: blur(18px) saturate(160%);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+      background: var(--obsidian);
+      color: var(--white-hi);
+      overflow-x: hidden;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       ANIMATED BACKGROUND MESH
+    ═══════════════════════════════════════════════════════════ */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 15% 10%,  rgba(201,168,76,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 85% 80%,  rgba(201,168,76,0.05) 0%, transparent 55%),
+        radial-gradient(ellipse 100% 80% at 50% 50%, rgba(11,13,22,1)      0%, transparent 100%);
+      pointer-events: none;
+    }
+
+    /* Subtle animated grid lines */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-image:
+        linear-gradient(rgba(201,168,76,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(201,168,76,0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      animation: gridDrift 30s linear infinite;
+      pointer-events: none;
+    }
+    @keyframes gridDrift {
+      0%   { background-position: 0 0; }
+      100% { background-position: 60px 60px; }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       HEADER
+    ═══════════════════════════════════════════════════════════ */
+    header {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      height: 72px;
+      background: rgba(7, 8, 13, 0.85);
+      backdrop-filter: blur(24px) saturate(180%);
+      border-bottom: 1px solid var(--gold-line);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    /* Spirit-of-Ecstasy-inspired monogram */
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      border: 1px solid var(--gold-line);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--gold-dim);
+      flex-shrink: 0;
+    }
+    .brand-icon svg { width: 20px; height: 20px; }
+
+    .brand-text { display: flex; flex-direction: column; line-height: 1; }
+    .brand-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.45rem;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--gold-light);
+    }
+    .brand-sub {
+      font-size: 0.58rem;
+      letter-spacing: 3.5px;
+      text-transform: uppercase;
+      color: var(--white-mid);
+      margin-top: 3px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .header-time {
+      font-size: 0.72rem;
+      letter-spacing: 1.5px;
+      color: var(--white-mid);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 16px;
+      border-radius: 30px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border: 1px solid;
+      transition: all 0.3s;
+    }
+    .status-pill .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      animation: blink 1.4s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    .pill-live {
+      background: rgba(61,214,140,0.08);
+      color: var(--safe);
+      border-color: rgba(61,214,140,0.3);
+    }
+    .pill-live .dot { background: var(--safe); }
+
+    .pill-off {
+      background: rgba(224,82,82,0.08);
+      color: var(--danger);
+      border-color: rgba(224,82,82,0.3);
+    }
+    .pill-off .dot { background: var(--danger); animation: none; }
+
+    /* ═══════════════════════════════════════════════════════════
+       LAYOUT
+    ═══════════════════════════════════════════════════════════ */
+    .page {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 24px;
+      padding: 28px 40px 40px;
+      max-width: 1700px;
+      margin: 0 auto;
+      min-height: calc(100vh - 72px);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       GLASS CARD BASE
+    ═══════════════════════════════════════════════════════════ */
+    .glass {
+      background: var(--navy-card);
+      backdrop-filter: blur(18px) saturate(160%);
+      -webkit-backdrop-filter: blur(18px) saturate(160%);
+      border: 1px solid var(--white-low);
+      border-radius: var(--radius-lg);
+      position: relative;
+      overflow: hidden;
+    }
+    /* top gold shimmer line */
+    .glass::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      opacity: 0.5;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       VIDEO PANEL
+    ═══════════════════════════════════════════════════════════ */
+    .video-col {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .video-card {
+      flex: 1;
+      min-height: 0;
+    }
+
+    .video-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--white-low);
+    }
+    .video-title {
+      font-size: 0.62rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+    .video-meta {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .meta-chip {
+      font-size: 0.6rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--white-mid);
+      padding: 3px 10px;
+      border: 1px solid var(--white-low);
+      border-radius: 20px;
+    }
+
+    .video-body {
+      position: relative;
+      background: #000;
+    }
+    .video-body img {
+      width: 100%;
+      display: block;
+      min-height: 200px;
+    }
+
+    /* corner brackets */
+    .corner { position: absolute; width: 20px; height: 20px; }
+    .corner-tl { top: 10px; left: 10px; border-top: 2px solid var(--gold); border-left: 2px solid var(--gold); }
+    .corner-tr { top: 10px; right: 10px; border-top: 2px solid var(--gold); border-right: 2px solid var(--gold); }
+    .corner-bl { bottom: 10px; left: 10px; border-bottom: 2px solid var(--gold); border-left: 2px solid var(--gold); }
+    .corner-br { bottom: 10px; right: 10px; border-bottom: 2px solid var(--gold); border-right: 2px solid var(--gold); }
+
+    .fps-tag {
+      position: absolute;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.6rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--gold);
+      background: rgba(7,8,13,0.7);
+      padding: 4px 14px;
+      border: 1px solid var(--gold-line);
+      border-radius: 20px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       SIDE PANEL
+    ═══════════════════════════════════════════════════════════ */
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* Section label */
+    .section-label {
+      font-size: 0.58rem;
+      letter-spacing: 3.5px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--gold-line), transparent);
+    }
+
+    /* ── Stat grid ─────────────────────────────────────────── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat-box {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--white-low);
+      border-radius: var(--radius-md);
+      padding: 16px 12px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+    .stat-box:hover { border-color: var(--gold-line); }
+
+    /* inner glow */
+    .stat-box::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 2px;
+      border-radius: 0 0 var(--radius-md) var(--radius-md);
+    }
+    .stat-box.s-fps::after    { background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+    .stat-box.s-person::after { background: linear-gradient(90deg, transparent, var(--white-mid), transparent); }
+    .stat-box.s-safe::after   { background: linear-gradient(90deg, transparent, var(--safe), transparent); }
+    .stat-box.s-unsafe::after { background: linear-gradient(90deg, transparent, var(--danger), transparent); }
+
+    .stat-val {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.6rem;
+      font-weight: 300;
+      line-height: 1;
+      letter-spacing: -1px;
+    }
+    .stat-lbl {
+      font-size: 0.58rem;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--white-mid);
+      margin-top: 6px;
+    }
+
+    .c-gold   { color: var(--gold-light); }
+    .c-white  { color: var(--white-hi); }
+    .c-safe   { color: var(--safe); }
+    .c-danger { color: var(--danger); }
+
+    /* ── Divider ───────────────────────────────────────────── */
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold-line), transparent);
+      margin: 2px 0;
+    }
+
+    /* ── Alert log ─────────────────────────────────────────── */
+    .card-body { padding: 18px 20px; }
+
+    .alert-scroll {
+      max-height: 180px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .alert-scroll::-webkit-scrollbar { width: 3px; }
+    .alert-scroll::-webkit-scrollbar-track { background: transparent; }
+    .alert-scroll::-webkit-scrollbar-thumb { background: var(--gold-line); border-radius: 3px; }
+
+    .alert-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--danger-dim);
+      border-left: 2px solid var(--danger);
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      font-size: 0.72rem;
+      animation: slideIn 0.25s ease;
+    }
+    @keyframes slideIn { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:none; } }
+
+    .alert-msg  { color: rgba(224,82,82,0.9); }
+    .alert-time { color: var(--white-mid); font-size: 0.62rem; letter-spacing: 1px; }
+
+    .no-alerts {
+      text-align: center;
+      color: var(--white-low);
+      font-size: 0.72rem;
+      letter-spacing: 1.5px;
+      padding: 24px 0;
+    }
+
+    /* ── Buttons ───────────────────────────────────────────── */
+    .btn-row { display: flex; flex-direction: column; gap: 10px; }
+
+    .btn {
+      width: 100%;
+      padding: 11px 16px;
+      border: 1px solid;
+      border-radius: var(--radius-md);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.25s;
+      background: transparent;
+    }
+    .btn-primary {
+      border-color: var(--gold-line);
+      color: var(--gold-light);
+      background: var(--gold-dim);
+    }
+    .btn-primary:hover {
+      background: rgba(201,168,76,0.28);
+      border-color: var(--gold);
+      box-shadow: 0 0 20px rgba(201,168,76,0.15);
+    }
+    .btn-ghost {
+      border-color: var(--white-low);
+      color: var(--white-mid);
+    }
+    .btn-ghost:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+      background: var(--danger-dim);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       UNSAFE ALERT BANNER
+    ═══════════════════════════════════════════════════════════ */
+    #unsafe-banner {
+      display: none;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 999;
+      padding: 14px 40px;
+      background: linear-gradient(90deg,
+        rgba(224,82,82,0.0) 0%,
+        rgba(224,82,82,0.92) 20%,
+        rgba(224,82,82,0.92) 80%,
+        rgba(224,82,82,0.0) 100%);
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #fff;
+      animation: bannerPulse 1.6s ease-in-out infinite;
+    }
+    @keyframes bannerPulse {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.65; }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       RESPONSIVE
+    ═══════════════════════════════════════════════════════════ */
+    @media (max-width: 1100px) {
+      .page { grid-template-columns: 1fr; }
+      .side-panel { display: grid; grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      header { padding: 0 20px; }
+      .page  { padding: 16px 20px 32px; }
+      .side-panel { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     HEADER
+═══════════════════════════════════════════════════════════ -->
+<header>
+  <div class="brand">
+    <div class="brand-icon">
+      <!-- Shield monogram SVG -->
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.35C16.5 22.15 20 17.25 20 12V6L12 2z"
+              stroke="#c9a84c" stroke-width="1.4" stroke-linejoin="round"/>
+        <path d="M9 12l2 2 4-4" stroke="#c9a84c" stroke-width="1.4"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="brand-text">
+      <span class="brand-name">SafeGuard</span>
+      <span class="brand-sub">Industrial PPE Intelligence</span>
+    </div>
+  </div>
+
+  <div class="header-right">
+    <span class="header-time" id="clock">--:--:--</span>
+    <span id="live-badge" class="status-pill pill-live">
+      <span class="dot"></span>Live
+    </span>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MAIN PAGE
+═══════════════════════════════════════════════════════════ -->
+<div class="page">
+
+  <!-- ── Video column ──────────────────────────────────────── -->
+  <div class="video-col">
+    <div class="glass video-card">
+      <div class="video-header">
+        <span class="video-title">Live Detection Feed</span>
+        <div class="video-meta">
+          <span class="meta-chip" id="model-chip">Fallback Model</span>
+          <span class="meta-chip">Camera 0</span>
+        </div>
+      </div>
+      <div class="video-body">
+        <img id="feed" src="/video_feed" alt="Live Feed"/>
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div>
+        <div class="corner corner-br"></div>
+        <div class="fps-tag" id="fps-tag">FPS — </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Side panel ────────────────────────────────────────── -->
+  <div class="side-panel">
+
+    <!-- Live stats -->
+    <div class="glass">
+      <div class="card-body">
+        <div class="section-label">Live Stats</div>
+        <div class="stat-grid">
+          <div class="stat-box s-fps">
+            <div class="stat-val c-gold" id="stat-fps">—</div>
+            <div class="stat-lbl">FPS</div>
+          </div>
+          <div class="stat-box s-person">
+            <div class="stat-val c-white" id="stat-persons">0</div>
+            <div class="stat-lbl">Persons</div>
+          </div>
+          <div class="stat-box s-safe">
+            <div class="stat-val c-safe" id="stat-safe">0</div>
+            <div class="stat-lbl">Safe</div>
+          </div>
+          <div class="stat-box s-unsafe">
+            <div class="stat-val c-danger" id="stat-unsafe">0</div>
+            <div class="stat-lbl">Unsafe</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Session totals -->
+    <div class="glass">
+      <div class="card-body">
+        <div class="section-label">Session Totals</div>
+        <div class="stat-grid">
+          <div class="stat-box s-safe">
+            <div class="stat-val c-safe" id="stat-total-safe">0</div>
+            <div class="stat-lbl">Total Safe</div>
+          </div>
+          <div class="stat-box s-unsafe">
+            <div class="stat-val c-danger" id="stat-total-unsafe">0</div>
+            <div class="stat-lbl">Total Unsafe</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alert log -->
+    <div class="glass" style="flex:1">
+      <div class="card-body" style="height:100%; display:flex; flex-direction:column;">
+        <div class="section-label">Violation Log</div>
+        <div class="alert-scroll" id="alert-log">
+          <div class="no-alerts">No violations recorded</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="glass">
+      <div class="card-body">
+        <div class="section-label">Controls</div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btn-toggle" onclick="toggleDetection()">
+            Pause Detection
+          </button>
+          <button class="btn btn-ghost" onclick="clearAlerts()">
+            Clear Violation Log
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Unsafe banner -->
+<div id="unsafe-banner">⚠ &nbsp; PPE Violation Detected &nbsp; — &nbsp; Unsafe Entry</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCRIPTS
+═══════════════════════════════════════════════════════════ -->
+<script>
+  let detectionOn = true;
+
+  /* Live clock */
+  function updateClock() {
+    document.getElementById('clock').textContent =
+      new Date().toLocaleTimeString('en-GB', { hour12: false });
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  /* Stats polling */
+  async function pollStats() {
+    try {
+      const res  = await fetch('/api/stats');
+      const data = await res.json();
+
+      document.getElementById('stat-fps').textContent          = data.fps;
+      document.getElementById('stat-persons').textContent      = data.persons;
+      document.getElementById('stat-safe').textContent         = data.safe;
+      document.getElementById('stat-unsafe').textContent       = data.unsafe;
+      document.getElementById('stat-total-safe').textContent   = data.total_safe;
+      document.getElementById('stat-total-unsafe').textContent = data.total_unsafe;
+      document.getElementById('fps-tag').textContent           = `FPS  ${data.fps}`;
+
+      /* model chip */
+      const chip = document.getElementById('model-chip');
+      chip.textContent = data.using_custom ? 'Custom PPE Model' : 'Fallback Model';
+      chip.style.color = data.using_custom ? 'var(--safe)' : 'var(--gold-light)';
+
+      /* unsafe banner */
+      document.getElementById('unsafe-banner').style.display =
+        data.unsafe > 0 ? 'block' : 'none';
+
+      /* alert log */
+      const log = document.getElementById('alert-log');
+      if (data.alerts && data.alerts.length > 0) {
+        const prev = log.querySelectorAll('.alert-row').length;
+        if (prev !== data.alerts.length) {
+          log.innerHTML = '';
+          [...data.alerts].reverse().forEach(a => {
+            const row = document.createElement('div');
+            row.className = 'alert-row';
+            row.innerHTML =
+              `<span class="alert-msg">⚠ ${a.count} person(s) missing PPE</span>
+               <span class="alert-time">${a.time}</span>`;
+            log.appendChild(row);
+          });
+        }
+      } else {
+        log.innerHTML = '<div class="no-alerts">No violations recorded</div>';
+      }
+    } catch (e) { /* server not ready yet */ }
+  }
+
+  async function toggleDetection() {
+    const res  = await fetch('/api/toggle', { method: 'POST' });
+    const data = await res.json();
+    detectionOn = data.detection;
+
+    const btn   = document.getElementById('btn-toggle');
+    const badge = document.getElementById('live-badge');
+
+    btn.textContent = detectionOn ? 'Pause Detection' : 'Resume Detection';
+    badge.className = detectionOn ? 'status-pill pill-live' : 'status-pill pill-off';
+    badge.innerHTML = detectionOn
+      ? '<span class="dot"></span>Live'
+      : '<span class="dot"></span>Paused';
+  }
+
+  async function clearAlerts() {
+    await fetch('/api/alerts/clear', { method: 'POST' });
+    document.getElementById('alert-log').innerHTML =
+      '<div class="no-alerts">No violations recorded</div>';
+  }
+
+  setInterval(pollStats, 800);
+  pollStats();
+</script>
+
+</body>
+</html>
